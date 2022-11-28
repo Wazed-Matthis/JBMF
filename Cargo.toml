@@ -1,0 +1,8 @@
+[workspace]
+members = [
+    "jbmf-parser",
+    "jbmf-ir",
+    "jbmf-symex",
+    "jbmf-lifter",
+    "jbmf-error"
+]

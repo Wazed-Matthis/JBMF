@@ -1,0 +1,15 @@
+[package]
+name = "java-rs-derive"
+version = "0.1.0"
+authors = []
+edition = "2018"
+
+[dependencies]
+java-rs-base = { path = "../java-rs-base" }
+proc-macro2 = "1.0.24"
+proc-macro-error = "1.0.4"
+quote = "1.0.7"
+syn = "1.0.48"
+
+[lib]
+proc-macro = true

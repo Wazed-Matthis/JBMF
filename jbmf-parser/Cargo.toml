@@ -1,0 +1,13 @@
+[package]
+name = "jbmf-parser"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+java-rs-pacific = { path = "java-rs-pacific" }
+java-rs-derive = { path = "java-rs-derive" }
+java-rs-base = { path = "java-rs-base" }
+jbmf-error = { path = "../jbmf-error" }
+anyhow = "1.0.66"

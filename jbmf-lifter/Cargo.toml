@@ -1,0 +1,12 @@
+[package]
+name = "jbmf-lifter"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+jbmf-error = { path = "../jbmf-error" }
+jbmf-parser = { path = "../jbmf-parser" }
+jbmf-ir = { path = "../jbmf-ir" }
+anyhow = "1.0.66"

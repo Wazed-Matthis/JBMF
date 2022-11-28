@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="CPP_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/jbmf-error/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/jbmf-ir/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/jbmf-lifter/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/jbmf-parser/byteshake-rs-derive/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/jbmf-parser/byteshake-rs-sys/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/jbmf-parser/byteshake-rs/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/jbmf-parser/java-rs-base/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/jbmf-parser/java-rs-derive/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/jbmf-parser/java-rs-pacific/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/jbmf-parser/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/jbmf-symex/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/target" />
+      <excludeFolder url="file://$MODULE_DIR$/jbmf-parser/target" />
+      <excludeFolder url="file://$MODULE_DIR$/jbmf-parser/byteshake-rs-derive/target" />
+      <excludeFolder url="file://$MODULE_DIR$/jbmf-parser/byteshake-rs-sys/target" />
+      <excludeFolder url="file://$MODULE_DIR$/jbmf-parser/byteshake-rs/target" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>
