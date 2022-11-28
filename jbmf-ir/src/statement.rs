@@ -8,7 +8,7 @@ pub enum StatementKind {
     Arithmetic(ArithmeticStatementKind),
     Flow(FlowStatementKind),
     Field,
-    Variable,
+    Variable(u32, TypeSignature),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, PartialOrd)]
@@ -54,4 +54,23 @@ pub enum BinaryOperation {
     LOR,
     LAND,
     LXOR,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, PartialOrd)]
+pub enum TypeSignature {
+    Integer,
+    Boolean,
+    Long,
+    Short,
+    Float,
+    Double,
+    Arbitrary,
+
+    IntegerArray,
+    BooleanArray,
+    LongArray,
+    ShortArray,
+    FloatArray,
+    DoubleArray,
+    ArbitraryArray,
 }

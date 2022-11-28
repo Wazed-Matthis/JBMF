@@ -1,81 +1,66 @@
+use crate::instruction_info::is_flow_instruction;
+use crate::translate::Translate;
 use jbmf_ir::block::BasicBlock;
 use jbmf_ir::flow_graph::FlowGraph;
+use jbmf_ir::statement::Statement;
 use jbmf_parser::java_rs_pacific::attribute::{Attribute, Compatibility, Instruction};
-use jbmf_parser::java_rs_pacific::SizedVec;
+use jbmf_parser::java_rs_pacific::{Constant, JavaClass, Method, SizedVec};
 use jbmf_parser::parse_class_file;
 use std::collections::HashSet;
 
-pub fn generate_flow_graph(
-    instructions: &SizedVec<u32, Instruction>,
-) -> FlowGraph<BasicBlock, (i16, i16)> {
-    for (index, instruction) in instructions.iter().enumerate() {
-        if is_flow_instruction(instruction) {
-            println!("instruction: {instruction:?} is a flow instruction");
-        }
+pub fn generate_flow_graph(class: JavaClass) -> FlowGraph<BasicBlock, (i16, i16)> {
+    let mut blocks = Vec::new();
+    for method in class.methods.iter() {
+        method
+            .attributes
+            .iter()
+            .filter(|attribute| matches!(attribute, Attribute::Code { .. }))
+            .for_each(|attribute| {
+                if let Attribute::Code {
+                    code: Compatibility::Current(code),
+                    ..
+                } = attribute
+                {
+                    let mut instructions = Vec::new();
+                    for (index, instruction) in code.iter().enumerate() {
+                        instructions.push(Statement::translate(instruction.clone()));
+                        if is_flow_instruction(instruction) {
+                            let method_name = if let Some(Constant::Utf8(var)) =
+                                class.constant_pool.get(method.name)
+                            {
+                                var
+                            } else {
+                                unreachable!()
+                            };
+                            println!("Block in method {method_name} breaks on {index} with instruction {instruction:?}");
+                            blocks.push(BasicBlock {
+                                ident: index as i64,
+                                statements: instructions,
+                            });
+                            return;
+                        }
+                    }
+                }
+            });
     }
-
+    for block in blocks {
+        println!(
+            "Block start index: {}, size: {:?}",
+            block.ident, block.statements
+        );
+    }
     FlowGraph {
         vertices: HashSet::new(),
         edges: vec![],
     }
 }
 
-pub fn is_flow_instruction(instruction: &Instruction) -> bool {
-    match instruction {
-        Instruction::AReturn
-        | Instruction::AThrow
-        | Instruction::DReturn
-        | Instruction::FReturn
-        | Instruction::Goto { .. }
-        | Instruction::GotoW { .. }
-        | Instruction::IfACmpEq { .. }
-        | Instruction::IfACmpNe { .. }
-        | Instruction::IfICmpEq { .. }
-        | Instruction::IfICmpNe { .. }
-        | Instruction::IfICmpLt { .. }
-        | Instruction::IfICmpGe { .. }
-        | Instruction::IfICmpGt { .. }
-        | Instruction::IfICmpLe { .. }
-        | Instruction::IfEq { .. }
-        | Instruction::IfNe { .. }
-        | Instruction::IfLt { .. }
-        | Instruction::IfGe { .. }
-        | Instruction::IfGt { .. }
-        | Instruction::IfLe { .. }
-        | Instruction::IfNonNull { .. }
-        | Instruction::IfNull { .. }
-        | Instruction::InvokeDynamic { .. }
-        | Instruction::InvokeInterface { .. }
-        | Instruction::InvokeSpecial { .. }
-        | Instruction::InvokeStatic { .. }
-        | Instruction::InvokeVirtual { .. }
-        | Instruction::LookUpSwitch { .. }
-        | Instruction::LReturn
-        | Instruction::Ret { .. }
-        | Instruction::Return
-        | Instruction::TableSwitch { .. } => true,
-        _ => false,
-    }
-}
-
 #[test]
 pub fn test_flow_graph() {
-    let class = parse_class_file("/home/wazed/IdeaProjects/Eternal-v3/target/classes/Start.class");
+    let class = parse_class_file(
+        "/home/wazed/IdeaProjects/Eternal-v3/target/classes/dev/eternal/client/ClientSettings.class",
+    );
 
     let class1 = class.unwrap();
-    for method in class1.methods.iter() {
-        let instructions = if let Some(Attribute::Code {
-            code: Compatibility::Current(code),
-            ..
-        }) = method
-            .attributes
-            .iter()
-            .find(|a| matches!(a, Attribute::Code { .. }))
-        {
-            code
-        } else {
-            panic!("No code attrib found");
-        };
-        generate_flow_graph(instructions);
-    }
+    generate_flow_graph(class1);
 }
