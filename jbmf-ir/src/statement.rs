@@ -7,32 +7,28 @@ pub struct Statement(pub Box<StatementKind>);
 pub enum StatementKind {
     Arithmetic(ArithmeticStatementKind),
     Flow(FlowStatementKind),
-    Field,
+    Field(FieldStatementKind),
     Variable(u32, TypeSignature),
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, PartialOrd)]
+pub enum FieldStatementKind {
+    Store(u16, TypeSignature),
+    Load(u16, TypeSignature),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, PartialOrd)]
 pub enum FlowStatementKind {
     MethodCall,
-    UnconditionalJump(BasicBlock),
-    ConditionalJump {
-        condition: Statement,
-        target: BasicBlock,
-    },
-    Return(BasicBlock),
+    UnconditionalJump(u16),
+    ConditionalJump { target: u16 },
+    Return,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, PartialOrd)]
 pub enum ArithmeticStatementKind {
-    Unary {
-        rhs: Statement,
-        operation: UnaryOperation,
-    },
-    Binary {
-        lhs: Statement,
-        rhs: Statement,
-        operation: BinaryOperation,
-    },
+    Unary(UnaryOperation),
+    Binary(BinaryOperation),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, PartialOrd)]
@@ -50,7 +46,7 @@ pub enum BinaryOperation {
     Division,
     LeftShift,
     RightShift,
-    LeftShiftPadded,
+    RightShiftPadded,
     LOR,
     LAND,
     LXOR,
