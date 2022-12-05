@@ -30,24 +30,20 @@ pub fn generate_flow_graph(class: JavaClass) -> FlowGraph<BasicBlock, (i16, i16)
                     let mut instructions = Vec::new();
                     for (index, instruction) in code.iter().enumerate() {
                         let statement = Statement::translate(instruction.clone());
-                        println!("Method: {method_name} statement: {statement:#?}");
                         instructions.push(statement);
                         if is_flow_instruction(instruction) {
                             blocks.push(BasicBlock {
-                                ident: index as i64,
-                                statements: instructions,
+                                beg_index: index as u64,
+                                statements: instructions.clone(),
                             });
-                            return;
+                            instructions.clear();
                         }
                     }
                 }
             });
     }
     for block in blocks {
-        println!(
-            "Block start index: {}, size: {:#?}",
-            block.ident, block.statements
-        );
+        println!("Block {:#?}", block);
     }
     FlowGraph {
         vertices: HashSet::new(),
