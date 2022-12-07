@@ -1,3 +1,5 @@
+[![Rust](https://github.com/Wazed-Matthis/JBMF/actions/workflows/rust.yml/badge.svg?branch=master)](https://github.com/Wazed-Matthis/JBMF/actions/workflows/rust.yml)
+
 # JBMF
 JBMF is a java bytecode manipulation framework written in rust.
 It does currently not support (but hopefully will in the future)
