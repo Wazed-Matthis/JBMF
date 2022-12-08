@@ -10,7 +10,7 @@ It does currently not support (but hopefully will in the future)
 - Building an ast from an smt statement and compiling it back to bytecode
 - (Far from now, but I'll include it anyways) Compiling to llvm-ir (at least some parts (might interop with jni))
 
-This project is designed to be used for deobfuscation of heavily obfuscated binary, by outlining the semantics of certain code parts, simplifying them and recompiling them back
+This project is designed to be used for the deobfuscation of heavily obfuscated binaries, by outlining the semantics of certain code parts, simplifying them and recompiling them back
 
 # Building
 To build just simply clone the repository
