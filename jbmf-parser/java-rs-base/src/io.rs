@@ -351,7 +351,6 @@ impl<T: ClassFilePart> ClassFilePart for Vec<T> {
         for item in self {
             item.write(writer, ctx)?;
         }
-
         Ok(())
     }
 }
