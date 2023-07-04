@@ -11,7 +11,7 @@ use crate::version::JavaVersion;
 mod constant;
 
 // https://docs.oracle.com/javase/specs/jvms/se15/html/jvms-4.html#jvms-4.4
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct ConstantPool(pub Vec<Constant>);
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]

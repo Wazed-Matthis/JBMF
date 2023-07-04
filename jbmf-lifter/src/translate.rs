@@ -4,26 +4,28 @@ use jbmf_ir::statement::{
 };
 use jbmf_parser::java_rs_pacific::attribute::Instruction;
 use jbmf_parser::java_rs_pacific::attribute::Instruction::{DLoad0, DLoad3};
+use jbmf_parser::java_rs_pacific::{Constant, ConstantPool, ConstantPoolIndex};
+use crate::extract_constant_fields;
 
 pub trait Translate {
-    fn translate(instructions: Instruction) -> Self
-    where
-        Self: Sized;
+    fn translate(instructions: Instruction, cp: ConstantPool) -> Self
+        where
+            Self: Sized;
 }
 
 impl Translate for Statement {
-    fn translate(instruction: Instruction) -> Self
-    where
-        Self: Sized,
+    fn translate(instruction: Instruction, cp: ConstantPool) -> Self
+        where
+            Self: Sized,
     {
-        Self(Box::new(StatementKind::translate(instruction)))
+        Self(Box::new(StatementKind::translate(instruction, cp)))
     }
 }
 
 impl Translate for StatementKind {
-    fn translate(instruction: Instruction) -> Self
-    where
-        Self: Sized,
+    fn translate(instruction: Instruction, cp: ConstantPool) -> Self
+        where
+            Self: Sized,
     {
         match instruction {
             // Integer arithmetics
@@ -68,7 +70,7 @@ impl Translate for StatementKind {
             | Instruction::DDiv
             | Instruction::DRem
             => StatementKind::Arithmetic(ArithmeticStatementKind::translate(
-                instruction,
+                instruction, cp
             )),
 
             // Conditionals
@@ -95,6 +97,7 @@ impl Translate for StatementKind {
             | Instruction::IfNonNull { .. }
             | Instruction::IfNull { .. } => StatementKind::Flow(FlowStatementKind::translate(
                 instruction,
+                cp
             )),
 
             Instruction::InvokeDynamic { .. }
@@ -112,6 +115,7 @@ impl Translate for StatementKind {
             | Instruction::AReturn
             => StatementKind::Flow(FlowStatementKind::translate(
                 instruction,
+                cp
             )),
 
             Instruction::ALoad { .. } => StatementKind::Field(FieldStatementKind::Load(0, TypeSignature::Arbitrary)),
@@ -146,9 +150,9 @@ impl Translate for StatementKind {
 }
 
 impl Translate for BinaryOperation {
-    fn translate(instruction: Instruction) -> Self
-    where
-        Self: Sized,
+    fn translate(instruction: Instruction, cp: ConstantPool) -> Self
+        where
+            Self: Sized,
     {
         match instruction {
             Instruction::LAdd | Instruction::DAdd | Instruction::FAdd | Instruction::IAdd => {
@@ -180,9 +184,9 @@ impl Translate for BinaryOperation {
 }
 
 impl Translate for ArithmeticStatementKind {
-    fn translate(instruction: Instruction) -> Self
-    where
-        Self: Sized,
+    fn translate(instruction: Instruction, cp: ConstantPool) -> Self
+        where
+            Self: Sized,
     {
         match instruction {
             Instruction::IAdd
@@ -223,22 +227,22 @@ impl Translate for ArithmeticStatementKind {
             | Instruction::DMul
             | Instruction::DDiv
             | Instruction::DRem => ArithmeticStatementKind::Binary(
-                BinaryOperation::translate(instruction),
+                BinaryOperation::translate(instruction,cp),
             ),
             Instruction::INeg | Instruction::LNeg | Instruction::FNeg | Instruction::DNeg => ArithmeticStatementKind::Unary(
-                UnaryOperation::translate(instruction),
+                UnaryOperation::translate(instruction, cp),
             ),
             _ => ArithmeticStatementKind::Unary(
-                UnaryOperation::translate(instruction),
+                UnaryOperation::translate(instruction, cp),
             ),
         }
     }
 }
 
 impl Translate for FlowStatementKind {
-    fn translate(instruction: Instruction) -> Self
-    where
-        Self: Sized,
+    fn translate(instruction: Instruction, cp: ConstantPool) -> Self
+        where
+            Self: Sized,
     {
         match instruction {
             // Conditionals
@@ -265,11 +269,30 @@ impl Translate for FlowStatementKind {
             | Instruction::IfNonNull { offset }
             | Instruction::IfNull { offset } => FlowStatementKind::ConditionalJump { target: offset },
 
-            Instruction::InvokeDynamic { .. }
-            | Instruction::InvokeInterface { .. }
-            | Instruction::InvokeSpecial { .. }
-            | Instruction::InvokeStatic { .. }
-            | Instruction::InvokeVirtual { .. } => FlowStatementKind::MethodCall,
+            Instruction::InvokeDynamic { index, .. }
+            | Instruction::InvokeInterface { index, .. }
+            | Instruction::InvokeSpecial { index }
+            | Instruction::InvokeStatic { index }
+            | Instruction::InvokeVirtual { index } => {
+
+                let (name_and_type_index, class_index) = extract_constant_fields!(cp, ConstantPoolIndex(index.0), Constant::MethodRef { name_and_type, class });
+                let (name_index, descriptor_index) = extract_constant_fields!(cp, *name_and_type_index, Constant::NameAndType {name, descriptor});
+                let name = extract_constant_fields!(cp, *name_index, Constant::Utf8 => (name)).clone();
+                let descriptor = extract_constant_fields!(cp, *descriptor_index, Constant::Utf8 => (name)).clone();
+
+                let class_name_index = extract_constant_fields!(cp, *class_index, Constant::Class => (name));
+                let owner = extract_constant_fields!(cp, *class_name_index, Constant::Utf8 => (name)).clone();
+
+                let (arguments, return_type) = parse_method_signature(&descriptor);
+
+                FlowStatementKind::MethodCall {
+                    owner,
+                    name,
+                    descriptor,
+                    arguments,
+                    return_type,
+                }
+            }
 
             Instruction::IReturn
             | Instruction::LReturn
@@ -285,10 +308,44 @@ impl Translate for FlowStatementKind {
     }
 }
 
+fn parse_method_signature(signature: &str) -> (Vec<TypeSignature>, TypeSignature) {
+    let mut chars = signature.chars();
+    let mut arguments = Vec::new();
+    let mut return_type = None;
+    let mut state = ParseState::Arguments;
+
+    while let Some(ch) = chars.next() {
+        match state {
+            ParseState::Arguments => {
+                if ch == ')' {
+                    state = ParseState::ReturnType;
+                } else {
+
+                    let argument_type = TypeSignature::from(ch.to_string());
+                    arguments.push(argument_type);
+                }
+            }
+            ParseState::ReturnType => {
+                let return_type_descriptor = format!("{}{}", ch, chars.collect::<String>());
+                return_type = Some(TypeSignature::from(return_type_descriptor));
+                break;
+            }
+        }
+    }
+
+    let return_type = return_type.unwrap_or(TypeSignature::Void);
+    (arguments, return_type)
+}
+
+enum ParseState {
+    Arguments,
+    ReturnType,
+}
+
 impl Translate for UnaryOperation {
-    fn translate(instruction: Instruction) -> Self
-    where
-        Self: Sized,
+    fn translate(instruction: Instruction, cp: ConstantPool) -> Self
+        where
+            Self: Sized,
     {
         match instruction {
             Instruction::INeg | Instruction::FNeg | Instruction::DNeg | Instruction::LNeg => {
@@ -299,10 +356,11 @@ impl Translate for UnaryOperation {
     }
 }
 
+
 impl Translate for TypeSignature {
-    fn translate(instruction: Instruction) -> Self
-    where
-        Self: Sized,
+    fn translate(instruction: Instruction, cp: ConstantPool) -> Self
+        where
+            Self: Sized,
     {
         TypeSignature::Arbitrary
     }

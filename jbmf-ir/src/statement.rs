@@ -19,7 +19,13 @@ pub enum FieldStatementKind {
 
 #[derive(Clone, Debug, Eq, PartialEq, PartialOrd)]
 pub enum FlowStatementKind {
-    MethodCall,
+    MethodCall {
+        owner: String,
+        name: String,
+        descriptor: String,
+        arguments: Vec<TypeSignature>,
+        return_type: TypeSignature,
+    },
     UnconditionalJump(u16),
     ConditionalJump { target: u16 },
     Return,
@@ -54,19 +60,51 @@ pub enum BinaryOperation {
 
 #[derive(Clone, Debug, Eq, PartialEq, PartialOrd)]
 pub enum TypeSignature {
+    Byte,
+    Char,
     Integer,
     Boolean,
     Long,
     Short,
     Float,
     Double,
+
+    Class(String),
+
     Arbitrary,
 
-    IntegerArray,
-    BooleanArray,
-    LongArray,
-    ShortArray,
-    FloatArray,
-    DoubleArray,
-    ArbitraryArray,
+    Void,
+
+    Array(Box<TypeSignature>),
+}
+
+impl From<String> for TypeSignature {
+    fn from(descriptor: String) -> Self {
+        let mut chars = descriptor.chars();
+        match chars.next() {
+            Some('Z') => TypeSignature::Boolean,
+            Some('B') => TypeSignature::Byte,
+            Some('C') => TypeSignature::Char,
+            Some('S') => TypeSignature::Short,
+            Some('I') => TypeSignature::Integer,
+            Some('J') => TypeSignature::Long,
+            Some('F') => TypeSignature::Float,
+            Some('D') => TypeSignature::Double,
+            Some('V') => TypeSignature::Void,
+            Some('L') => {
+                // Parse class name until ';' character
+                let class_name: String = chars
+                    .take_while(|&c| c != ';')
+                    .collect();
+                TypeSignature::Class(class_name)
+            }
+            Some('[') => {
+                // Parse array type recursively
+                let element_type = TypeSignature::from(descriptor[1..].to_string());
+                TypeSignature::Array(Box::new(element_type))
+            }
+            Some(_) => TypeSignature::Arbitrary, // Handle unknown characters
+            None => TypeSignature::Void, // Handle empty string (This might occur in this format: "()V")
+        }
+    }
 }

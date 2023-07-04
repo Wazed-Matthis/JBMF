@@ -9,8 +9,8 @@ use jbmf_parser::parse_class_file;
 use std::collections::HashSet;
 
 pub fn generate_flow_graph(class: JavaClass) -> FlowGraph<BasicBlock, (i16, i16)> {
-    let mut blocks = Vec::new();
     for method in class.methods.iter() {
+        let mut blocks = Vec::new();
         let method_name = if let Some(Constant::Utf8(var)) = class.constant_pool.get(method.name) {
             var
         } else {
@@ -29,7 +29,7 @@ pub fn generate_flow_graph(class: JavaClass) -> FlowGraph<BasicBlock, (i16, i16)
                 {
                     let mut instructions = Vec::new();
                     for (index, instruction) in code.iter().enumerate() {
-                        let statement = Statement::translate(instruction.clone());
+                        let statement = Statement::translate(instruction.clone(), class.constant_pool.clone());
                         instructions.push(statement);
                         if is_flow_instruction(instruction) {
                             blocks.push(BasicBlock {
@@ -41,10 +41,15 @@ pub fn generate_flow_graph(class: JavaClass) -> FlowGraph<BasicBlock, (i16, i16)
                     }
                 }
             });
+        println!("---------- Method {} ----------", method_name);
+        for block in blocks {
+            println!("Block at idx {}", block.beg_index);
+            for statement in block.statements {
+                println!("{:?}", statement)
+            }
+        }
     }
-    for block in blocks {
-        println!("Block {:#?}", block);
-    }
+
     FlowGraph {
         vertices: HashSet::new(),
         edges: vec![],
@@ -53,9 +58,7 @@ pub fn generate_flow_graph(class: JavaClass) -> FlowGraph<BasicBlock, (i16, i16)
 
 #[test]
 pub fn test_flow_graph() {
-    let class = parse_class_file(
-        "/home/wazed/IdeaProjects/Eternal-v3/target/classes/dev/eternal/client/module/impl/combat/Aura.class",
-    );
+    let class = parse_class_file("C:/Users/matth/Desktop/Scoreboard.class");
 
     let class1 = class.unwrap();
     generate_flow_graph(class1);
